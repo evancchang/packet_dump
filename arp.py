@@ -1,5 +1,4 @@
-# capture ARP packet in windows
-from ctypes import *
+# capture ARP packet in windowsfrom ctypes import *
 from winpcapy import *
 import time
 import sys
@@ -41,20 +40,19 @@ class ARP:
 		# socket.gethostname()='TPE-DCHUNG'
 		# socket.gethostbyname(socket.gethostname())='10.162.224.158'
 		self.IP = socket.gethostbyname(socket.gethostname())
-		print self.IP
 		self.LINE_LEN = 16
 
 	def iptos(self, in_):
-	   return "%d.%d.%d.%d" % (in_.s_b1,in_.s_b2 , in_.s_b3, in_.s_b4)
+	   return "%d.%d.%d.%d" % (in_.s_b1, in_.s_b2, in_.s_b3, in_.s_b4)
 
 	def ifprint(self, d):
 	    a = POINTER(pcap_addr_t)
 
 	    ## Name
-	    print("%s\n" % d.name)
+	    #print("%s\n" % d.name)
 	    ## Description
-	    if (d.description):
-	        print ("\tDescription: %s\n" % d.description)
+	    #if (d.description):
+	    #    print ("\tDescription: %s\n" % d.description)
 
 	    ## IP addresses
 	    if d.addresses:
@@ -66,13 +64,12 @@ class ARP:
 	            mysockaddr_in = sockaddr_in
 	            if (a.addr):
 	                aTmp = cast(a.addr,POINTER(mysockaddr_in))
-	                print ("\tAddress: %s\n" % self.iptos(aTmp.contents.sin_addr.S_un.S_un_b))
+	                #print ("\tAddress: %s\n" % self.iptos(aTmp.contents.sin_addr.S_un.S_un_b))
 	                return self.iptos(aTmp.contents.sin_addr.S_un.S_un_b)
 	        if a.next:
 	            a = a.next.contents
 	        else:
 	            a = False
-	    print ("\n")
 
 	def capture(self, recv_num):
 		alldevs = POINTER(pcap_if_t)()
@@ -84,17 +81,15 @@ class ARP:
 		## Retrieve the device list
 		if (pcap_findalldevs(byref(alldevs), errbuf) == -1):
 		    print ("Error in pcap_findalldevs: %s\n" % errbuf.value)
-		    sys.exit(1)
+		    return False
 
 		d = alldevs.contents
-		print "debug >>>>"
-		IP = socket.gethostbyname(socket.gethostname())
 
 		while d:
 		    get_ip_address = self.ifprint(d)
 
 		    # select the ethernet card by IP address
-		    if get_ip_address == IP:
+		    if get_ip_address == self.IP:
 		    	break
 
 		    if d.next:
@@ -108,12 +103,12 @@ class ARP:
 
 		adhandle = pcap_open_live(d.name, 65536, 1, 1000, errbuf)
 		if (adhandle == None):
-			print("\nUnable to open the adapter. %s is not supported by Pcap-WinPcap\n" % d.contents.name)
+			#print("\nUnable to open the adapter. %s is not supported by Pcap-WinPcap\n" % d.contents.name)
 			## Free the device list
 			pcap_freealldevs(alldevs)
-			sys.exit(-1)
+			return False
 
-		print("\nlistening on %s...\n" % (d.description))
+		#print("\nlistening on %s...\n" % (d.description))
 		## At this point, we don't need any more the device list. Free it
 		pcap_freealldevs(alldevs)
 
@@ -179,13 +174,14 @@ class ARP:
 
 		if(res == -1):
 		    print ("Error reading the packets: %s\n" % pcap_geterr(adhandle))
-		    sys.exit(-1)
+		    return False
 
 		print "arp_list = %s" %arp_list
 		print "collect %d ARP packet" %len(arp_list)
-		pcap_close(adhandle)
-		sys.exit(0)
 
+	def close(self):
+		pcap_close(adhandle)
+		return True
 
 if __name__ == '__main__':
 	myarp = ARP()
